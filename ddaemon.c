@@ -12,6 +12,7 @@
 #define ERR_INIT_MODIFY 2
 #define ERR_ADD_WATCH 3
 #define BASE_PATH_NULL 4
+#define ERR_READ_NOTIFY 5
 
 int IeventQueue = -1;
 int IeventStatus = -1;
@@ -22,6 +23,8 @@ int main(int argc, char** argv)
     char *basePath = NULL;
     char *token = NULL;
     const struct inotify_event* watchEvent;
+    char *notificationMessage;
+
 
 
     char buffer[4096];
@@ -59,9 +62,39 @@ int main(int argc, char** argv)
     }
 
     while(true){
-
          readLength = read(IeventQueue, buffer, sizeof(buffer));
-            for (char *bufferPointer = buffer; bufferPointer < buffer + readLength; bufferPointer += sizeof(struct inotify_event) + watchEvent->len){
+            if(readLength == -1){
+             exit(ERR_READ_NOTIFY);
+         }
+         for (char *bufferPointer = buffer; bufferPointer < buffer + readLength; bufferPointer += sizeof(struct inotify_event) + watchEvent->len){
+             watchEvent = (const struct inotify_event *) bufferPointer;
+             if (watchEvent->mask & IN_CREATE) {
+                     notificationMessage = "File created\n";
+                 }
+             if (watchEvent->mask & IN_DELETE) {
+                     notificationMessage = "File deleted\n";
+             }
+             if (watchEvent->mask & IN_ACCESS ){
+                     notificationMessage = "File accessed\n";
+             }
+             if (watchEvent->mask & IN_CLOSE_WRITE) {
+                     notificationMessage = "File writen and closed\n";
+                 }
+             if (watchEvent->mask & IN_MODIFY) {
+                     notificationMessage = "File modified\n";
+             }
+             if (watchEvent->mask & IN_MOVE_SELF) {
+                     notificationMessage = "File moved\n";
+             }
+
+             if (notificationMessage == NULL){
+                     continue;
+             }
+
+             printf("%s\n",notificationMessage);
+
+
+
 
          }
 
